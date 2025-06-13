@@ -25,3 +25,14 @@ def parquet_to_bq(project_id: str, dataset_id: str, table_id: str, destination_b
             "destination_bucket": destination_bucket
         }
     )
+
+def pubsub_firestore_backup(project_id: str, topic: str) -> None:
+    utils.logger.info(f"Publishing PubSub message to backup and refresh Firestore data")
+
+    utils.make_api_call(
+        endpoint="refresh_firestore",
+        json_data={
+            "project_id": project_id,
+            "topic": topic
+        }
+    )
