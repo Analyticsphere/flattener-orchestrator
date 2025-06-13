@@ -14,7 +14,7 @@ RAW_TABLES = [
     "bioSurvey_v1",
     "biospecimen",
     "birthdayCard",
-    "boxes",
+    #"boxes", # This flattened table is created by scheduled query FlatConnect.boxes_JP
     "cancerOccurrence",
     "cancerScreeningHistorySurvey",
     "clinicalBioSurvey_v1",
