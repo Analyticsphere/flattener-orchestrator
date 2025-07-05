@@ -1,5 +1,6 @@
 import dependencies.flattener.utils as utils
 
+
 def bq_to_parquet(project_id: str, dataset_id: str, table_id: str, destination_bucket) -> None:
     utils.logger.info(f"Saving {table_id} to Parquet file in {destination_bucket}")
 

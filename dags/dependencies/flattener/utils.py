@@ -1,10 +1,10 @@
 import logging
-import sys
-import requests  # type: ignore
 import subprocess
-from typing import Optional, Any
+import sys
+from typing import Any, Optional
 
 import dependencies.flattener.constants as constants
+import requests  # type: ignore
 
 """
 Set up a logging instance that will write to stdout (and therefore show up in Google Cloud logs)
