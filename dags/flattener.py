@@ -21,7 +21,7 @@ default_args = {
 dag = DAG(
     'flattener',
     default_args=default_args,
-    description='Pipeline for flattening Connect study data',
+    description='Pipeline for flattening Connect survery data',
     schedule_interval='0 10 * * *',  # Daily at 10:00 AM UTC (6AM or 7AM ET depending on daylight savings)
     params={
         'trigger_firestore_backup': Param(
