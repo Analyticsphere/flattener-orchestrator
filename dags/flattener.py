@@ -1,17 +1,15 @@
+import time
 from datetime import timedelta
 
-import dependencies.flattener.utils as utils
+import airflow  # type: ignore
 import dependencies.flattener.constants as constants
-import dependencies.flattener.gcp as gcp
 import dependencies.flattener.flatten as flatten
-
-import time
-import airflow # type: ignore
+import dependencies.flattener.gcp as gcp
+import dependencies.flattener.utils as utils
 from airflow import DAG  # type: ignore
 from airflow.decorators import task  # type: ignore
-from airflow.utils.dates import days_ago  # type: ignore
-from airflow.models.param import Param  # type: ignore
 from airflow.exceptions import AirflowSkipException  # type: ignore
+from airflow.models.param import Param  # type: ignore
 
 default_args = {
     'start_date': airflow.utils.dates.days_ago(1),
@@ -69,7 +67,7 @@ def firestore_backup(**context) -> None:
         raise AirflowSkipException
     else:
         try:
-            gcp.pubsub_firestore_backup(constants.BQ_PROJECT_ID, constants.FIRESTORE_REFRESH_TOPIC)
+            gcp.pubsub_firestore_backup(constants.GCP_PROJECT_ID, constants.FIRESTORE_REFRESH_TOPIC)
 
             # Wait 60 seconds for Firestore backup to complete; usually takes <1 second
             time.sleep(60)
@@ -95,7 +93,7 @@ def get_selected_tables(**context) -> list[str]:
 @task(trigger_rule="none_failed")
 def table_to_parquet(table_name: str) -> None:
     try:
-        gcp.bq_to_parquet(constants.BQ_PROJECT_ID, constants.BQ_RAW_DATASET, table_name, constants.GCS_FLATTENED_BUCKET)
+        gcp.bq_to_parquet(constants.GCP_PROJECT_ID, constants.BQ_RAW_DATASET, table_name, constants.GCS_FLATTENED_BUCKET)
     except Exception as e:
         raise Exception(f"Unable to save {table_name} as Parquet: {str(e)}")
 
@@ -109,7 +107,7 @@ def flatten_parquet(table_name: str) -> None:
 @task(trigger_rule="none_failed")
 def parquet_to_table(table_name: str) -> None:
     try:
-        gcp.parquet_to_bq(constants.BQ_PROJECT_ID, constants.BQ_FLATTENED_DATASET, table_name, constants.GCS_FLATTENED_BUCKET)
+        gcp.parquet_to_bq(constants.GCP_PROJECT_ID, constants.BQ_FLATTENED_DATASET, table_name, constants.GCS_FLATTENED_BUCKET)
     except Exception as e:
         raise Exception(f"Error moving {table_name} Parquet file into BigQuery: {str(e)}")
 

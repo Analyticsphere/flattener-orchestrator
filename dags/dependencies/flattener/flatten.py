@@ -1,5 +1,6 @@
 import dependencies.flattener.utils as utils
 
+
 def flatten_parquet(table_id: str, destination_bucket) -> None:
     utils.logger.info(f"Flattening {table_id} Parquet files")
 

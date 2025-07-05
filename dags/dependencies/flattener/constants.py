@@ -1,12 +1,11 @@
-#ROCESSOR_ENDPOINT = "https://ccc-flattener-eaf-dev-1061430463455.us-central1.run.app"
-PROCESSOR_ENDPOINT= "https://ccc-flattener-155089172944.us-central1.run.app"
+import os
 
-#BQ_PROJECT_ID = "nih-nci-dceg-connect-dev"
-BQ_PROJECT_ID = "nih-nci-dceg-connect-prod-6d04"
+PROCESSOR_ENDPOINT = os.environ.get("FLATTENER_PROCESSOR_ENDPOINT")
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
+GCS_FLATTENED_BUCKET = os.environ.get("GCS_FLATTENED_BUCKET")
+
 BQ_RAW_DATASET = "Connect"
 BQ_FLATTENED_DATASET = "FlatConnect"
-#GCS_FLATTENED_BUCKET = "flattener_tmp_dev"
-GCS_FLATTENED_BUCKET = "flattener_tmp"
 
 FIRESTORE_REFRESH_TOPIC = "schedule-firestore-backup"
 
