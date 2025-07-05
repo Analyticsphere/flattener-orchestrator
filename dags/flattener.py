@@ -24,12 +24,18 @@ dag = DAG(
     'flattener',
     default_args=default_args,
     description='Pipeline for flattening Connect study data',
-    start_date=days_ago(1),
+    schedule_interval='0 10 * * *',  # Daily at 10:00 AM UTC (6AM or 7AM ET depending on daylight savings)
     params={
         'trigger_firestore_backup': Param(
             default=False,
             type='boolean',
             description='When set to True, triggers Firestore backup and data refresh'
+        ),
+        'tables_to_process': Param(
+            default=constants.RAW_TABLES,
+            type='array',
+            items={'type': 'string', 'enum': constants.RAW_TABLES},
+            description='Select which tables to include in the flattening process. If none selected, all tables will be processed.'
         )
     }
 )
@@ -71,6 +77,22 @@ def firestore_backup(**context) -> None:
             raise Exception(f"Unable to backup/refresh Firestore data: {str(e)}")
 
 @task(trigger_rule="none_failed")
+def get_selected_tables(**context) -> list[str]:
+    """
+    Task to get the list of tables selected by the user.
+    Returns all tables if none are specifically selected.
+    """
+    selected_tables = context['params']['tables_to_process']
+    
+    # Handle case where user deselects all tables - default to all tables
+    if not selected_tables:
+        utils.logger.info("No tables selected, defaulting to all tables")
+        return constants.RAW_TABLES
+    
+    utils.logger.info(f"Processing selected tables: {selected_tables}")
+    return selected_tables
+
+@task(trigger_rule="none_failed")
 def table_to_parquet(table_name: str) -> None:
     try:
         gcp.bq_to_parquet(constants.BQ_PROJECT_ID, constants.BQ_RAW_DATASET, table_name, constants.GCS_FLATTENED_BUCKET)
@@ -94,10 +116,11 @@ def parquet_to_table(table_name: str) -> None:
 with dag:
     api_health_check = check_api_health()
     firestore_refresh = firestore_backup()
+    selected_tables = get_selected_tables()
     
-    bq_to_parquet = table_to_parquet.expand(table_name=constants.RAW_TABLES)
-    flatten_files = flatten_parquet.expand(table_name=constants.RAW_TABLES)
-    parquet_to_bq = parquet_to_table.expand(table_name=constants.RAW_TABLES)
+    bq_to_parquet = table_to_parquet.expand(table_name=selected_tables)
+    flatten_files = flatten_parquet.expand(table_name=selected_tables)
+    parquet_to_bq = parquet_to_table.expand(table_name=selected_tables)
 
     # Simple linear dependency chain
-    api_health_check >> firestore_refresh >> bq_to_parquet >> flatten_files >> parquet_to_bq
+    api_health_check >> firestore_refresh >> selected_tables >> bq_to_parquet >> flatten_files >> parquet_to_bq
