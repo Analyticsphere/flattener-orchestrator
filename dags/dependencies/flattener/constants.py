@@ -31,5 +31,6 @@ RAW_TABLES = [
     "notifications",
     "participants",
     "promis_v1",
-    "sendgridTracking"
+    "sendgridTracking",
+    "preference2025"
 ]
