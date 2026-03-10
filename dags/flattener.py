@@ -104,7 +104,20 @@ def flatten_parquet(table_name: str) -> None:
     except Exception as e:
         raise Exception(f"Unable to flatten {table_name} Parquet files: {str(e)}")
 
+
 @task(trigger_rule="none_failed")
+def convert_boxes_tbl(table_name: str) -> None:
+    if table_name != "boxes":
+        utils.logger.info(f"Skipping convert_parquet for {table_name}")
+        raise AirflowSkipException
+
+    try:
+        flatten.convert_parquet(table_name, constants.GCS_FLATTENED_BUCKET)
+    except Exception as e:
+        raise Exception(f"Unable to convert {table_name} Parquet files: {str(e)}")
+
+
+@task() # Allow this task to run even if upstream tasks are failed, so we can attempt to load any successfully flattened tables into BigQuery
 def parquet_to_table(table_name: str) -> None:
     try:
         gcp.parquet_to_bq(constants.GCP_PROJECT_ID, constants.BQ_FLATTENED_DATASET, table_name, constants.GCS_FLATTENED_BUCKET)
@@ -117,8 +130,9 @@ with dag:
     selected_tables = get_selected_tables()
     
     bq_to_parquet = table_to_parquet.expand(table_name=selected_tables)
+    convert_boxes = convert_boxes_tbl.expand(table_name=selected_tables)
     flatten_files = flatten_parquet.expand(table_name=selected_tables)
     parquet_to_bq = parquet_to_table.expand(table_name=selected_tables)
 
     # Simple linear dependency chain
-    api_health_check >> firestore_refresh >> selected_tables >> bq_to_parquet >> flatten_files >> parquet_to_bq
+    api_health_check >> firestore_refresh >> selected_tables >> bq_to_parquet >> convert_boxes >> flatten_files >> parquet_to_bq
