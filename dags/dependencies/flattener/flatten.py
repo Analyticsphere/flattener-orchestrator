@@ -1,6 +1,18 @@
 import dependencies.flattener.utils as utils
 
 
+def convert_parquet(table_id: str, destination_bucket) -> None:
+    utils.logger.info(f"Converting {table_id} Parquet files before flattening")
+
+    utils.make_api_call(
+        endpoint="convert_parquet",
+        json_data={
+            "table_id": table_id,
+            "destination_bucket": destination_bucket
+        }
+    )
+
+
 def flatten_parquet(table_id: str, destination_bucket) -> None:
     utils.logger.info(f"Flattening {table_id} Parquet files")
 
