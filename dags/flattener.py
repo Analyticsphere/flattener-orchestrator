@@ -1,5 +1,6 @@
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import airflow  # type: ignore
 import dependencies.flattener.constants as constants
@@ -11,8 +12,10 @@ from airflow.decorators import task  # type: ignore
 from airflow.exceptions import AirflowSkipException  # type: ignore
 from airflow.models.param import Param  # type: ignore
 
+EASTERN_TIMEZONE = ZoneInfo('America/New_York')
+
 default_args = {
-    'start_date': airflow.utils.dates.days_ago(1),
+    'start_date': datetime(2024, 1, 1, 9, 30, tzinfo=EASTERN_TIMEZONE),
     'retries': 3,
     'retry_delay': timedelta(seconds=15),
     'owner': 'airflow'
@@ -22,7 +25,7 @@ dag = DAG(
     'flattener',
     default_args=default_args,
     description='Pipeline for flattening Connect survery data',
-    schedule_interval='0 10 * * *',  # Daily at 10:00 AM UTC (6AM or 7AM ET depending on daylight savings)
+    schedule_interval='30 9 * * *',  # Daily at 9:30 AM America/New_York (Washington, DC local time)
     params={
         'trigger_firestore_backup': Param(
             default=False,
